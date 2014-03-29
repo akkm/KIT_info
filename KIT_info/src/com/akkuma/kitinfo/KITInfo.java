@@ -1,11 +1,16 @@
 package com.akkuma.kitinfo;
 
+import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.HashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import javax.xml.parsers.ParserConfigurationException;
+
+import org.xml.sax.SAXException;
 
 import twitter4j.Twitter;
 import twitter4j.TwitterAPIConfiguration;
@@ -19,6 +24,7 @@ import com.akkuma.kitinfo.core.announce.CommonAnnouncementHandler;
 import com.akkuma.kitinfo.core.announce.CommonAnnouncementHandler.AuthenticateFailedException;
 import com.akkuma.kitinfo.core.announce.CommonAnnouncementHandler.CommonAnnouncementException;
 import com.akkuma.kitinfo.core.announce.CommonAnnouncementHandler.NotAuthenticatedException;
+import com.akkuma.kitinfo.core.weather.KanazawaWeatherHandler;
 import com.akkuma.kitinfo.util.FileUtils;
 
 /**
@@ -100,10 +106,29 @@ public class KITInfo {
         } catch (CommonAnnouncementException e) {
             e.printStackTrace();
             onOutput("共有告知の取得でエラー");
+        } catch (Exception e) {
+            e.printStackTrace();
+            onOutput("共有告知の取得でエラー");
         } finally {
             mCommonAnnouncementHandler.destroy();
         }
 
+    }
+
+    public void weather(String url) {
+        Calendar calendar = Calendar.getInstance();
+        SimpleDateFormat outputDateFormat = new SimpleDateFormat("yyyy/MM/dd H:mm:ss:SSS");
+        onOutput("KIT_info weather started," + outputDateFormat.format(calendar.getTime()));
+        try {
+            addTweetQueue(new KanazawaWeatherHandler().get(url));
+        } catch (Exception e) {
+            e.printStackTrace();
+            onOutput("天気予報取得でエラー");
+        }
+    }
+    
+    public void dayTweet() {
+        
     }
 
     private void onOutput(String text) {

@@ -26,6 +26,8 @@ import javax.swing.JPasswordField;
 import javax.swing.JCheckBox;
 import javax.swing.JScrollPane;
 import javax.swing.SwingConstants;
+import javax.swing.JSpinner;
+import javax.swing.SpinnerNumberModel;
 
 public class MainFrame extends JFrame implements DebugOutputListener {
 
@@ -39,18 +41,28 @@ public class MainFrame extends JFrame implements DebugOutputListener {
 
     private class KITInfoThread extends Thread {
 
-        private boolean tweetOnly;
+        private boolean parse;
+        private boolean weather;
+        private boolean dayTweet;
 
-        public KITInfoThread(boolean tweetOnly) {
-            this.tweetOnly = tweetOnly;
+        public KITInfoThread(boolean parse, boolean weather, boolean dayTweet) {
+            this.parse = parse;
+            this.weather = weather;
+            this.dayTweet = dayTweet;
         }
 
         @Override
         public void run() {
             mKitInfo = new KITInfo();
             mKitInfo.setDebugOutputListener(MainFrame.this);
-            if (!tweetOnly) {
+            if (parse) {
                 mKitInfo.start(mPortalIdTextField.getText(), mPortalPasswordField.getText());
+            }
+            if (weather) {
+                mKitInfo.weather(mWeatherRssUrlTextField.getText());
+            }
+            if (dayTweet) {
+                mKitInfo.dayTweet();
             }
             mKitInfo.tweetQueue(mDisableTweetCheckBox.isSelected(), mConsumerKeyTextField.getText(), mConsumerSecretTextField.getText(), mAccessTokenTextField.getText(),
                     mAccessTokenSecretTextField.getText(), mProxyHostTextField.getText(), Integer.parseInt(mProxyPortTextField.getText()));
@@ -67,6 +79,7 @@ public class MainFrame extends JFrame implements DebugOutputListener {
         public void run() {
             Calendar nextExecute = Calendar.getInstance();
             int minute = nextExecute.get(Calendar.MINUTE);
+            int hour = nextExecute.get(Calendar.HOUR);
             nextExecute.add(Calendar.MINUTE, 15 - (minute % 15));
             nextExecute.set(Calendar.SECOND, 0);
             nextExecute.set(Calendar.MILLISECOND, 0);
@@ -75,7 +88,10 @@ public class MainFrame extends JFrame implements DebugOutputListener {
             mStateLabel.setText(mStateDateFormat.format(nextExecute.getTime()));
             mForceStartButton.setEnabled(false);
             mTextArea.setText("");
-            mKitInfoThread = new KITInfoThread(minute != 0);
+            boolean parse = minute == 0;
+            boolean weather = hour == (int) mWeatherTweetHourSpinner.getValue() && minute == (int) mWeatherTweetMinuteSpinner.getValue();
+            boolean dayTweet = hour == (int) mDayTweetTimeHourSpinner.getValue() && minute == (int) mDayTweetTimeMinuteSpinner.getValue();
+            mKitInfoThread = new KITInfoThread(parse, weather, dayTweet);
             mKitInfoThread.start();
         }
     };
@@ -121,7 +137,7 @@ public class MainFrame extends JFrame implements DebugOutputListener {
         public void actionPerformed(ActionEvent e) {
             mForceStartButton.setEnabled(false);
             mTextArea.setText("");
-            mKitInfoThread = new KITInfoThread(false);
+            mKitInfoThread = new KITInfoThread(true, true, true);
             mKitInfoThread.start();
         }
     };
@@ -140,6 +156,11 @@ public class MainFrame extends JFrame implements DebugOutputListener {
             mSettingsContainer.setProxyHost(mProxyHostTextField.getText());
             mSettingsContainer.setProxyPort(mProxyPortTextField.getText());
             mSettingsContainer.setDisableTweetCheck(mDisableTweetCheckBox.isSelected());
+            mSettingsContainer.setWeatherRssUrl(mWeatherRssUrlTextField.getText());
+            mSettingsContainer.setWeatherTweetHour((int) mWeatherTweetHourSpinner.getValue());
+            mSettingsContainer.setWeatherTweetMinute((int) mWeatherTweetMinuteSpinner.getValue());
+            mSettingsContainer.setDayTweetTimeHour((int) mDayTweetTimeMinuteSpinner.getValue());
+            mSettingsContainer.setDayTweetTimeMinute((int) mDayTweetTimeMinuteSpinner.getValue());
             FileUtils.writeObjectToFile(mSettingsContainer, SETTINGS_LOG_FILE);
         };
     };
@@ -174,6 +195,11 @@ public class MainFrame extends JFrame implements DebugOutputListener {
     private JCheckBox mDisableTweetCheckBox;
     private JLabel mStateLabel;
     private JTextArea mTextArea;
+    private JTextField mWeatherRssUrlTextField;
+    private JSpinner mWeatherTweetHourSpinner;
+    private JSpinner mWeatherTweetMinuteSpinner;
+    private JSpinner mDayTweetTimeHourSpinner;
+    private JSpinner mDayTweetTimeMinuteSpinner;
 
     /**
      * Create the frame.
@@ -182,7 +208,7 @@ public class MainFrame extends JFrame implements DebugOutputListener {
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         addWindowListener(mWindowAdapter);
         setTitle("KIT_info Manager");
-        setBounds(100, 100, 560, 469);
+        setBounds(100, 100, 560, 590);
         contentPane = new JPanel();
         contentPane.setBorder(new EmptyBorder(5, 5, 5, 5));
         setContentPane(contentPane);
@@ -284,12 +310,65 @@ public class MainFrame extends JFrame implements DebugOutputListener {
         contentPane.add(mDisableTweetCheckBox);
 
         JScrollPane scrollPane = new JScrollPane();
-        scrollPane.setBounds(5, 202, 527, 218);
+        scrollPane.setBounds(5, 271, 527, 270);
         contentPane.add(scrollPane);
 
         mTextArea = new JTextArea();
         mTextArea.setEditable(false);
         scrollPane.setViewportView(mTextArea);
+
+        JLabel lblWeatherRssUrl = new JLabel("Weather RSS URL");
+        lblWeatherRssUrl.setBounds(205, 202, 137, 13);
+        contentPane.add(lblWeatherRssUrl);
+
+        mWeatherRssUrlTextField = new JTextField();
+        mWeatherRssUrlTextField.setBounds(354, 199, 178, 19);
+        contentPane.add(mWeatherRssUrlTextField);
+        mWeatherRssUrlTextField.setColumns(10);
+
+        JLabel lblWeatherTweetTime = new JLabel("Weather Tweet Time");
+        lblWeatherTweetTime.setBounds(205, 225, 137, 13);
+        contentPane.add(lblWeatherTweetTime);
+
+        mWeatherTweetHourSpinner = new JSpinner();
+        mWeatherTweetHourSpinner.setModel(new SpinnerNumberModel(0, 0, 23, 1));
+        mWeatherTweetHourSpinner.setBounds(354, 222, 48, 20);
+        contentPane.add(mWeatherTweetHourSpinner);
+
+        JLabel label_2 = new JLabel("時");
+        label_2.setBounds(414, 225, 20, 13);
+        contentPane.add(label_2);
+
+        mWeatherTweetMinuteSpinner = new JSpinner();
+        mWeatherTweetMinuteSpinner.setModel(new SpinnerNumberModel(0, 0, 45, 15));
+        mWeatherTweetMinuteSpinner.setBounds(434, 222, 48, 20);
+        contentPane.add(mWeatherTweetMinuteSpinner);
+
+        JLabel label_3 = new JLabel("分");
+        label_3.setBounds(494, 225, 26, 13);
+        contentPane.add(label_3);
+
+        JLabel lblDayTweetTime = new JLabel("Day Tweet Time");
+        lblDayTweetTime.setBounds(205, 248, 137, 13);
+        contentPane.add(lblDayTweetTime);
+
+        mDayTweetTimeHourSpinner = new JSpinner();
+        mDayTweetTimeHourSpinner.setModel(new SpinnerNumberModel(0, 0, 23, 1));
+        mDayTweetTimeHourSpinner.setBounds(354, 245, 48, 20);
+        contentPane.add(mDayTweetTimeHourSpinner);
+
+        JLabel label_4 = new JLabel("時");
+        label_4.setBounds(414, 248, 20, 13);
+        contentPane.add(label_4);
+
+        mDayTweetTimeMinuteSpinner = new JSpinner();
+        mDayTweetTimeMinuteSpinner.setModel(new SpinnerNumberModel(0, 0, 45, 15));
+        mDayTweetTimeMinuteSpinner.setBounds(434, 245, 48, 20);
+        contentPane.add(mDayTweetTimeMinuteSpinner);
+
+        JLabel label_5 = new JLabel("分");
+        label_5.setBounds(494, 248, 26, 13);
+        contentPane.add(label_5);
 
         mSettingsContainer = (SettingsContainer) FileUtils.readObjectFromFile(SETTINGS_LOG_FILE);
         if (mSettingsContainer == null) {
@@ -305,7 +384,12 @@ public class MainFrame extends JFrame implements DebugOutputListener {
         mProxyHostTextField.setText(mSettingsContainer.getProxyHost());
         mProxyPortTextField.setText(mSettingsContainer.getProxyPort());
         mDisableTweetCheckBox.setSelected(mSettingsContainer.isDisableTweetCheck());
-        
+        mWeatherRssUrlTextField.setText(mSettingsContainer.getWeatherRssUrl());
+        mWeatherTweetHourSpinner.setValue(mSettingsContainer.getWeatherTweetHour());
+        mWeatherTweetMinuteSpinner.setValue(mSettingsContainer.getWeatherTweetMinute());
+        mDayTweetTimeHourSpinner.setValue(mSettingsContainer.getDayTweetTimeHour());
+        mDayTweetTimeMinuteSpinner.setValue(mSettingsContainer.getDayTweetTimeMinute());
+
         mStartButton.doClick();
     }
 
