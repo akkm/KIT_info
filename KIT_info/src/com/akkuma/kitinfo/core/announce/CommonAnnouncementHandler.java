@@ -14,6 +14,7 @@ import java.util.regex.Pattern;
 
 import org.apache.commons.lang3.StringEscapeUtils;
 
+@SuppressWarnings("serial")
 public class CommonAnnouncementHandler {
 
     public static final String PORTAL_URL = "http://portal10.mars.kanazawa-it.ac.jp/portal/student";

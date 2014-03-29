@@ -1,6 +1,10 @@
 package com.akkuma.kitinfo.core.weather;
 
 import java.io.IOException;
+import java.net.InetSocketAddress;
+import java.net.Proxy;
+import java.net.URL;
+import java.net.URLConnection;
 import java.util.Calendar;
 
 import javax.xml.parsers.DocumentBuilder;
@@ -14,12 +18,21 @@ import org.xml.sax.SAXException;
 
 public class KanazawaWeatherHandler {
     
-    public String get(String url) throws ParserConfigurationException, SAXException, IOException {
+    public String get(String spec, String proxyHost, int port) throws ParserConfigurationException, SAXException, IOException {
+        
+        URL url = new URL(spec);
+        URLConnection connection;
+        if (proxyHost != null && !proxyHost.isEmpty()) {
+            Proxy proxy = new Proxy(Proxy.Type.HTTP, new InetSocketAddress(proxyHost, port));
+            connection = url.openConnection(proxy);
+        } else {
+            connection = url.openConnection();
+        }
         
         String str = null;
         DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
         DocumentBuilder builder = factory.newDocumentBuilder();
-        Document document = builder.parse(url);
+        Document document = builder.parse(connection.getInputStream());
         Element root = document.getDocumentElement();
 
         NodeList itemList = root.getElementsByTagName("item");

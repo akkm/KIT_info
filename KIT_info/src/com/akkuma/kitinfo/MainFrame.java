@@ -18,7 +18,8 @@ import java.util.TimerTask;
 import javax.swing.JLabel;
 import javax.swing.JTextArea;
 
-import com.akkuma.kitinfo.KITInfo.DebugOutputListener;
+import com.akkuma.kitinfo.core.KITInfo;
+import com.akkuma.kitinfo.core.KITInfo.DebugOutputListener;
 import com.akkuma.kitinfo.util.FileUtils;
 
 import javax.swing.JTextField;
@@ -29,6 +30,7 @@ import javax.swing.SwingConstants;
 import javax.swing.JSpinner;
 import javax.swing.SpinnerNumberModel;
 
+@SuppressWarnings({ "serial" })
 public class MainFrame extends JFrame implements DebugOutputListener {
 
     private static final String SETTINGS_LOG_FILE = "settings.log";
@@ -51,6 +53,7 @@ public class MainFrame extends JFrame implements DebugOutputListener {
             this.dayTweet = dayTweet;
         }
 
+        @SuppressWarnings("deprecation")
         @Override
         public void run() {
             mKitInfo = new KITInfo();
@@ -59,7 +62,7 @@ public class MainFrame extends JFrame implements DebugOutputListener {
                 mKitInfo.start(mPortalIdTextField.getText(), mPortalPasswordField.getText());
             }
             if (weather) {
-                mKitInfo.weather(mWeatherRssUrlTextField.getText());
+                mKitInfo.weather(mWeatherRssUrlTextField.getText(), mProxyHostTextField.getText(), Integer.parseInt(mProxyPortTextField.getText()));
             }
             if (dayTweet) {
                 mKitInfo.dayTweet();
@@ -144,6 +147,7 @@ public class MainFrame extends JFrame implements DebugOutputListener {
 
     private final WindowAdapter mWindowAdapter = new WindowAdapter() {
 
+        @SuppressWarnings("deprecation")
         @Override
         public void windowClosing(java.awt.event.WindowEvent e) {
             mStopButton.doClick();
@@ -159,7 +163,7 @@ public class MainFrame extends JFrame implements DebugOutputListener {
             mSettingsContainer.setWeatherRssUrl(mWeatherRssUrlTextField.getText());
             mSettingsContainer.setWeatherTweetHour((int) mWeatherTweetHourSpinner.getValue());
             mSettingsContainer.setWeatherTweetMinute((int) mWeatherTweetMinuteSpinner.getValue());
-            mSettingsContainer.setDayTweetTimeHour((int) mDayTweetTimeMinuteSpinner.getValue());
+            mSettingsContainer.setDayTweetTimeHour((int) mDayTweetTimeHourSpinner.getValue());
             mSettingsContainer.setDayTweetTimeMinute((int) mDayTweetTimeMinuteSpinner.getValue());
             FileUtils.writeObjectToFile(mSettingsContainer, SETTINGS_LOG_FILE);
         };
