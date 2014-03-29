@@ -1,6 +1,6 @@
 KIT_info
 ========
-This is Twitter Bot Manager for KIT_info
+Twitter Bot Manager for KIT_info
 
 License
 ========
