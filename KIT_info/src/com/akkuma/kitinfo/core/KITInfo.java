@@ -3,8 +3,6 @@ package com.akkuma.kitinfo.core;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.HashMap;
-import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -13,13 +11,6 @@ import twitter4j.TwitterException;
 import twitter4j.TwitterFactory;
 import twitter4j.conf.ConfigurationBuilder;
 
-import com.akkuma.kitinfo.core.announce.CommonAnnouncementDetailEntry;
-import com.akkuma.kitinfo.core.announce.CommonAnnouncementEntry;
-import com.akkuma.kitinfo.core.announce.CommonAnnouncementHandler;
-import com.akkuma.kitinfo.core.announce.CommonAnnouncementHandler.AuthenticateFailedException;
-import com.akkuma.kitinfo.core.announce.CommonAnnouncementHandler.CommonAnnouncementException;
-import com.akkuma.kitinfo.core.announce.CommonAnnouncementHandler.NotAuthenticatedException;
-import com.akkuma.kitinfo.core.cancel.CancelledLectureHandler;
 import com.akkuma.kitinfo.core.weather.KanazawaWeatherHandler;
 import com.akkuma.kitinfo.util.FileUtils;
 
@@ -30,9 +21,8 @@ import com.akkuma.kitinfo.util.FileUtils;
  */
 
 @SuppressWarnings("unchecked")
-public class KITInfo {
+public final class KITInfo extends KITInfoParser {
 
-    private static final String LOG_COMMON_ANNOUNCEMENT = "common_announcement.log";
     private static final String LOG_NEXT_TWEET_LIST = "next_tweet.log";
 
     private DebugOutputListener mListener;
@@ -53,67 +43,8 @@ public class KITInfo {
         SimpleDateFormat outputDateFormat = new SimpleDateFormat("yyyy/MM/dd H:mm:ss:SSS");
         onOutput("KIT_info started," + outputDateFormat.format(calendar.getTime()));
 
-        // 共有告知
-        CommonAnnouncementHandler commonAnnouncementHandler = new CommonAnnouncementHandler();
-        try {
-            onOutput("共有告知を取得します。");
-            HashMap<Integer, CommonAnnouncementEntry> log = (HashMap<Integer, CommonAnnouncementEntry>) FileUtils.readObjectFromFile(LOG_COMMON_ANNOUNCEMENT);
-            if (log == null) {
-                log = new HashMap<Integer, CommonAnnouncementEntry>();
-                onOutput("共有告知のログファイルを新規作成しました。");
-            }
-
-            commonAnnouncementHandler.authenticate(portalId, portalPassword);
-            ArrayList<CommonAnnouncementEntry> entries = commonAnnouncementHandler.get();
-
-            onOutput("学生ポータルより共有告知を" + entries.size() + "個取得しました。");
-
-            if (entries.size() != 0) {
-                ArrayList<CommonAnnouncementDetailEntry> newDetailEntries = new ArrayList<CommonAnnouncementDetailEntry>();
-
-                for (CommonAnnouncementEntry entry : entries) {
-                    CommonAnnouncementEntry logEntry = log.get(entry.getId());
-                    if (logEntry == null || logEntry.isCanceled() != entry.isCanceled()) {
-                        CommonAnnouncementDetailEntry detailEntry = commonAnnouncementHandler.getDetailEntry(entry.getId(), entry.getCONTCHECK());
-                        newDetailEntries.add(detailEntry);
-                    }
-                }
-                onOutput("共通告知の新規エントリーは" + newDetailEntries.size() + "個です。");
-
-                for (CommonAnnouncementDetailEntry entry : newDetailEntries) {
-                    addTweetQueue("[共通告知]" + entry.getTitle().replace("　", ""));
-                    addTweetQueue("内容:" + entry.getBody().replace("　", ""));
-                }
-
-                log.clear();
-                for (CommonAnnouncementEntry entry : entries) {
-                    log.put(entry.getId(), entry);
-                }
-
-                if (newDetailEntries.size() != 0) {
-                    FileUtils.writeObjectToFile(log, LOG_COMMON_ANNOUNCEMENT);
-                }
-            }
-
-        } catch (AuthenticateFailedException e) {
-            e.printStackTrace();
-            onOutput("学生ポータルの認証に失敗");
-
-        } catch (NotAuthenticatedException e) {
-            e.printStackTrace();
-            onOutput("学生ポータルの認証をしていません");
-        } catch (CommonAnnouncementException e) {
-            e.printStackTrace();
-            onOutput("共有告知の取得でエラー");
-        } catch (Exception e) {
-            e.printStackTrace();
-            onOutput("共有告知の取得でエラー");
-        } finally {
-            commonAnnouncementHandler.destroy();
-        }
-
-        // 休講
-        CancelledLectureHandler cancelledLectureHandler = new CancelledLectureHandler();
+        commonAnnouncementSession(portalId, portalPassword);
+        kitNewsSession();
 
     }
 
@@ -136,13 +67,15 @@ public class KITInfo {
 
     }
 
-    private void onOutput(String text) {
+    @Override
+    protected void onOutput(String text) {
         if (mListener != null) {
             mListener.onOutput(text);
         }
     }
 
-    private void addTweetQueue(String text) {
+    @Override
+    protected void addTweetQueue(String text) {
         // URLの存在をチェック
         Pattern urlPattern = Pattern.compile("(http://|https://){1}[\\w\\.\\-/:\\#\\?\\=\\&\\;\\%\\~\\+]+", Pattern.MULTILINE);
         Matcher urlMatcher = urlPattern.matcher(text);
@@ -188,12 +121,8 @@ public class KITInfo {
 
         ArrayList<String> nextQueueLog = new ArrayList<String>();
 
-        if (mTweetQueue.size() > 7) {
-            List<String> removal = mTweetQueue.subList(7, mTweetQueue.size());
-            nextQueueLog.addAll(removal);
-            for (String s : removal) {
-                mTweetQueue.remove(s);
-            }
+        while (mTweetQueue.size() > 7) {
+            nextQueueLog.add(mTweetQueue.remove(7));
         }
 
         ConfigurationBuilder builder = new ConfigurationBuilder();

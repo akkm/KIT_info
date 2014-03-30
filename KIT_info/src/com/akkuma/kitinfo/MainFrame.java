@@ -29,6 +29,7 @@ import javax.swing.JScrollPane;
 import javax.swing.SwingConstants;
 import javax.swing.JSpinner;
 import javax.swing.SpinnerNumberModel;
+import javax.swing.UIManager;
 
 @SuppressWarnings({ "serial" })
 public class MainFrame extends JFrame implements DebugOutputListener {
@@ -175,6 +176,7 @@ public class MainFrame extends JFrame implements DebugOutputListener {
     public static void main(String[] args) {
         EventQueue.invokeLater(new Runnable() {
             public void run() {
+                UIManager.put("swing.boldMetal", Boolean.FALSE);
                 try {
                     MainFrame frame = new MainFrame();
                     frame.setVisible(true);
