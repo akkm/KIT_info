@@ -94,8 +94,16 @@ public final class KITInfo extends KITInfoParser {
             mTweetQueue.add(first + "…");
 
             str = str.substring(139, str.length());
+
+            urlMatcher = urlPattern.matcher(str);
+            if (urlMatcher.find()) {
+                dummyTweetString = urlMatcher.replaceAll("https://t.co/AAAAAAAAAA");
+            } else {
+                dummyTweetString = text;
+            }
+            
             boolean setLeader = false;
-            if (str.length() > 140) {
+            if (dummyTweetString.length() > 140) {
                 setLeader = true;
             }
             String second = str.substring(0, setLeader ? 136 : str.length());
@@ -147,6 +155,7 @@ public final class KITInfo extends KITInfoParser {
             } catch (TwitterException e) {
                 e.printStackTrace();
                 onOutput("ツイート失敗:" + str);
+                onOutput(e.toString());
                 nextQueueLog.add(str);
             }
 

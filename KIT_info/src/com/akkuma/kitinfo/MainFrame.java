@@ -83,7 +83,7 @@ public class MainFrame extends JFrame implements DebugOutputListener {
         public void run() {
             Calendar nextExecute = Calendar.getInstance();
             int minute = nextExecute.get(Calendar.MINUTE);
-            int hour = nextExecute.get(Calendar.HOUR);
+            int hour = nextExecute.get(Calendar.HOUR_OF_DAY);
             nextExecute.add(Calendar.MINUTE, 15 - (minute % 15));
             nextExecute.set(Calendar.SECOND, 0);
             nextExecute.set(Calendar.MILLISECOND, 0);
