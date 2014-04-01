@@ -46,16 +46,26 @@ public abstract class KITInfoParser {
             }
 
             ArrayList<CommonAnnouncementDetailEntry> newDetailEntries = new ArrayList<CommonAnnouncementDetailEntry>();
+            ArrayList<CommonAnnouncementDetailEntry> cancelledEntries = new ArrayList<CommonAnnouncementDetailEntry>();
 
             for (CommonAnnouncementEntry entry : entries) {
                 CommonAnnouncementEntry logEntry = log.get(entry.getId());
                 if (logEntry == null || logEntry.isCanceled() != entry.isCanceled()) {
                     CommonAnnouncementDetailEntry detailEntry = commonAnnouncementHandler.getDetailEntry(entry.getId(), entry.getCONTCHECK());
-                    newDetailEntries.add(detailEntry);
+
+                    if (entry.isCanceled()) {
+                        cancelledEntries.add(detailEntry);
+                    } else {
+                        newDetailEntries.add(detailEntry);
+                    }
                 }
             }
             onOutput("共通告知の新規エントリーは" + newDetailEntries.size() + "個です。");
 
+            for (CommonAnnouncementDetailEntry entry : cancelledEntries) {
+                addTweetQueue("[共通告知]【※取り消し】" + entry.getTitle().replace("　", ""));
+            }
+            
             for (CommonAnnouncementDetailEntry entry : newDetailEntries) {
                 addTweetQueue("[共通告知]" + entry.getTitle().replace("　", ""));
                 addTweetQueue("内容:" + entry.getBody().replace("　", ""));

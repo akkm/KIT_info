@@ -8,8 +8,13 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 
 public class FileUtils {
+    
+    private static boolean dontSave = false;
 
     public static void writeObjectToFile(Object object, String filename) {
+        if (dontSave) {
+            return;
+        }
 
         ObjectOutputStream objectOut = null;
         try {
@@ -55,5 +60,14 @@ public class FileUtils {
 
         return object;
     }
+
+    public static boolean isDontSave() {
+        return dontSave;
+    }
+
+    public static void setDontSave(boolean dontSave) {
+        FileUtils.dontSave = dontSave;
+    }
+    
     
 }

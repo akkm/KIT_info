@@ -141,7 +141,7 @@ public class MainFrame extends JFrame implements DebugOutputListener {
         public void actionPerformed(ActionEvent e) {
             mForceStartButton.setEnabled(false);
             mTextArea.setText("");
-            mKitInfoThread = new KITInfoThread(true, true, true);
+            mKitInfoThread = new KITInfoThread(true, false, true);
             mKitInfoThread.start();
         }
     };
@@ -206,6 +206,7 @@ public class MainFrame extends JFrame implements DebugOutputListener {
     private JSpinner mWeatherTweetMinuteSpinner;
     private JSpinner mDayTweetTimeHourSpinner;
     private JSpinner mDayTweetTimeMinuteSpinner;
+    private JCheckBox mDontSaveCheckBox;
 
     /**
      * Create the frame.
@@ -237,7 +238,7 @@ public class MainFrame extends JFrame implements DebugOutputListener {
 
         mStateLabel = new JLabel("開始していません。");
         mStateLabel.setVerticalAlignment(SwingConstants.TOP);
-        mStateLabel.setBounds(5, 87, 188, 36);
+        mStateLabel.setBounds(5, 113, 188, 36);
         contentPane.add(mStateLabel);
 
         JLabel label = new JLabel("学籍番号");
@@ -376,6 +377,15 @@ public class MainFrame extends JFrame implements DebugOutputListener {
         label_5.setBounds(494, 248, 26, 13);
         contentPane.add(label_5);
 
+        mDontSaveCheckBox = new JCheckBox("ログをセーブしない");
+        mDontSaveCheckBox.setBounds(5, 79, 188, 21);
+        mDontSaveCheckBox.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                FileUtils.setDontSave(mDontSaveCheckBox.isSelected());
+            }
+        });
+
         mSettingsContainer = (SettingsContainer) FileUtils.readObjectFromFile(SETTINGS_LOG_FILE);
         if (mSettingsContainer == null) {
             mSettingsContainer = new SettingsContainer();
@@ -395,6 +405,8 @@ public class MainFrame extends JFrame implements DebugOutputListener {
         mWeatherTweetMinuteSpinner.setValue(mSettingsContainer.getWeatherTweetMinute());
         mDayTweetTimeHourSpinner.setValue(mSettingsContainer.getDayTweetTimeHour());
         mDayTweetTimeMinuteSpinner.setValue(mSettingsContainer.getDayTweetTimeMinute());
+
+        contentPane.add(mDontSaveCheckBox);
 
         mStartButton.doClick();
     }

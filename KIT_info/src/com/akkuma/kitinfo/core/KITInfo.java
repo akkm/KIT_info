@@ -25,6 +25,7 @@ public final class KITInfo extends KITInfoParser {
 
     private static final String LOG_NEXT_TWEET_LIST = "next_tweet.log";
 
+    private Pattern mUrlPattern = Pattern.compile("(http://|https://){1}[\\w\\.\\-/:\\#\\?\\=\\&\\;\\%\\~\\+]+", Pattern.MULTILINE);
     private DebugOutputListener mListener;
     private ArrayList<String> mTweetQueue = new ArrayList<String>();
 
@@ -76,43 +77,64 @@ public final class KITInfo extends KITInfoParser {
 
     @Override
     protected void addTweetQueue(String text) {
-        // URLの存在をチェック
-        Pattern urlPattern = Pattern.compile("(http://|https://){1}[\\w\\.\\-/:\\#\\?\\=\\&\\;\\%\\~\\+]+", Pattern.MULTILINE);
-        Matcher urlMatcher = urlPattern.matcher(text);
-        String dummyTweetString;
+        Matcher urlMatcher;
+        String dmString;
+        urlMatcher = mUrlPattern.matcher(text);
         if (urlMatcher.find()) {
-            dummyTweetString = urlMatcher.replaceAll("https://t.co/AAAAAAAAAA");
+            dmString = urlMatcher.replaceAll("https://t.co/AAAAAAAAAA");
         } else {
-            dummyTweetString = text;
+            dmString = text;
         }
-
-        if (dummyTweetString.length() <= 140) {
+        
+        if (dmString.length() <= 140) {
             mTweetQueue.add(text);
-        } else {
-            String str = text;
-            String first = str.substring(0, 139);
-            mTweetQueue.add(first + "…");
-
-            str = str.substring(139, str.length());
-
-            urlMatcher = urlPattern.matcher(str);
-            if (urlMatcher.find()) {
-                dummyTweetString = urlMatcher.replaceAll("https://t.co/AAAAAAAAAA");
-            } else {
-                dummyTweetString = text;
-            }
-            
-            boolean setLeader = false;
-            if (dummyTweetString.length() > 140) {
-                setLeader = true;
-            }
-            String second = str.substring(0, setLeader ? 136 : str.length());
-            if (setLeader) {
-                mTweetQueue.add(second + "（省略）");
-            } else {
-                mTweetQueue.add(second);
-            }
+            return;
         }
+        
+        // テキスト内のURLを探す
+        ArrayList<String> urlList = new ArrayList<String>();
+        urlMatcher = mUrlPattern.matcher(text);
+        
+        String str;
+        while(urlMatcher.find()) {
+            urlList.add(urlMatcher.group());
+            str = urlMatcher.replaceFirst("");
+            urlMatcher = mUrlPattern.matcher(str);
+        }
+        
+        // 1つ目
+        String first = text.substring(0, 139);
+        String dd = first;
+        for (String url : urlList) {
+            dd = dd.replace(url, "");
+        }
+        urlMatcher = mUrlPattern.matcher(dd);
+        if (urlMatcher.find()) {
+            String invalidUrl = urlMatcher.group();
+            first = first.replace(invalidUrl, "");
+        }
+        mTweetQueue.add(first + "…");
+        
+        // 2つ目
+        String second = text.replace(first, "");
+        boolean leader = false;
+        String footer = "";
+        if (second.length() > 140) {
+            leader = true;
+            footer = "（省略）";
+        }
+        second = second.substring(0, leader ? 136 : second.length());
+        String ee = second;
+        for (String url : urlList) {
+            ee = ee.replace(url, "");
+        }
+        urlMatcher = mUrlPattern.matcher(ee);
+        if (urlMatcher.find()) {
+            String invalidUrl2 = urlMatcher.group();
+            second = second.replace(invalidUrl2, "");
+        }
+        mTweetQueue.add(second + footer);
+        
     }
 
     public void tweetQueue(boolean debug, String consumerKey, String consumerSecret, String accessToken, String accessTokenSecret, String proxyHost, int proxyPort) {
@@ -156,7 +178,9 @@ public final class KITInfo extends KITInfoParser {
                 e.printStackTrace();
                 onOutput("ツイート失敗:" + str);
                 onOutput(e.toString());
-                nextQueueLog.add(str);
+                if (e.getErrorCode() != 187) {
+                    nextQueueLog.add(str);
+                }
             }
 
         }
@@ -170,4 +194,14 @@ public final class KITInfo extends KITInfoParser {
     public static interface DebugOutputListener {
         public void onOutput(String text);
     }
+
+    ArrayList<String> getTweetQueue() {
+        return mTweetQueue;
+    }
+
+    void setTweetQueue(ArrayList<String> tweetQueue) {
+        this.mTweetQueue = tweetQueue;
+    }
+    
+    
 }
