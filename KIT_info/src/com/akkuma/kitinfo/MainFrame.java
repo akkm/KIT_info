@@ -34,7 +34,7 @@ import javax.swing.UIManager;
 @SuppressWarnings("serial")
 public class MainFrame extends JFrame implements DebugOutputListener {
 
-    private static final String SETTINGS_LOG_FILE = "settings.log";
+    private static final String SETTINGS_LOG_FILE = "settings.json";
 
     private JPanel contentPane;
     private KITInfo mKitInfo;
@@ -166,7 +166,7 @@ public class MainFrame extends JFrame implements DebugOutputListener {
             mSettingsContainer.setWeatherTweetMinute((int) mWeatherTweetMinuteSpinner.getValue());
             mSettingsContainer.setDayTweetTimeHour((int) mDayTweetTimeHourSpinner.getValue());
             mSettingsContainer.setDayTweetTimeMinute((int) mDayTweetTimeMinuteSpinner.getValue());
-            FileUtils.writeObjectToFile(mSettingsContainer, SETTINGS_LOG_FILE);
+            FileUtils.write(mSettingsContainer, SETTINGS_LOG_FILE, SettingsContainer.class);
         };
     };
 
@@ -386,7 +386,7 @@ public class MainFrame extends JFrame implements DebugOutputListener {
             }
         });
 
-        mSettingsContainer = (SettingsContainer) FileUtils.readObjectFromFile(SETTINGS_LOG_FILE);
+        mSettingsContainer = (SettingsContainer) FileUtils.read(SETTINGS_LOG_FILE,SettingsContainer.class);
         if (mSettingsContainer == null) {
             mSettingsContainer = new SettingsContainer();
         }

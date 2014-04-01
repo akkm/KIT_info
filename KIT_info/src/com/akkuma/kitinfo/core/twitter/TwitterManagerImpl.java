@@ -1,7 +1,6 @@
 package com.akkuma.kitinfo.core.twitter;
 
 import java.util.ArrayList;
-
 import twitter4j.Twitter;
 import twitter4j.TwitterException;
 import twitter4j.TwitterFactory;
@@ -9,15 +8,15 @@ import twitter4j.conf.ConfigurationBuilder;
 
 import com.akkuma.kitinfo.core.KITInfo.DebugOutputListener;
 import com.akkuma.kitinfo.util.FileUtils;
+import com.google.gson.reflect.TypeToken;
 
 class TwitterManagerImpl extends TwitterManager {
 
-    private static final String LOG_NEXT_TWEET_LIST = "next_tweet.log";
+    private static final String LOG_NEXT_TWEET_LIST = "next_tweet.json";
 
     ArrayList<TweetRequest> mRequests = new ArrayList<TweetRequest>();
 
-    TwitterManagerImpl() {
-    }
+    TwitterManagerImpl() {}
 
     @Override
     public void addRequest(TweetRequest req) {
@@ -28,7 +27,7 @@ class TwitterManagerImpl extends TwitterManager {
     @Override
     public void tweetRequests(DebugOutputListener out, boolean debug, String consumerKey, String consumerSecret, String accessToken, String accessTokenSecret, String proxyHost, int proxyPort) {
 
-        ArrayList<TweetRequest> queueLog = (ArrayList<TweetRequest>) FileUtils.readObjectFromFile(LOG_NEXT_TWEET_LIST);
+        ArrayList<TweetRequest> queueLog = (ArrayList<TweetRequest>) FileUtils.read(LOG_NEXT_TWEET_LIST, new TypeToken<ArrayList<TweetRequest>>() {}.getType());
         if (queueLog != null) {
             mRequests.addAll(0, queueLog);
         }
@@ -81,11 +80,11 @@ class TwitterManagerImpl extends TwitterManager {
         }
 
         if (queueLog == null || queueLog.size() != 0 || nextQueueLog.size() != 0) {
-            FileUtils.writeObjectToFile(nextQueueLog, LOG_NEXT_TWEET_LIST);
+            FileUtils.write(nextQueueLog, LOG_NEXT_TWEET_LIST, new TypeToken<ArrayList<TweetRequest>>() {}.getType());
         }
 
     }
-    
+
     ArrayList<TweetRequest> getRequests() {
         return mRequests;
     }

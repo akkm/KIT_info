@@ -5,6 +5,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.HashMap;
+import java.util.Map;
 
 import javax.xml.parsers.ParserConfigurationException;
 
@@ -22,6 +23,7 @@ import com.akkuma.kitinfo.core.twitter.TweetRequest;
 import com.akkuma.kitinfo.core.twitter.TwitterManager;
 import com.akkuma.kitinfo.core.weather.KanazawaWeatherHandler;
 import com.akkuma.kitinfo.util.FileUtils;
+import com.google.gson.reflect.TypeToken;
 
 /**
  * 
@@ -54,8 +56,8 @@ public final class KITInfoImpl extends KITInfo {
 
     }
 
-    private static final String LOG_KIT_NEWS = "kit_news.log";
-    private static final String LOG_COMMON_ANNOUNCEMENT = "common_announcement.log";
+    private static final String LOG_KIT_NEWS = "kit_news.json";
+    private static final String LOG_COMMON_ANNOUNCEMENT = "common_announcement.json";
 
     @SuppressWarnings("unchecked")
     public void commonAnnouncementSession(String portalId, String portalPassword) {
@@ -64,7 +66,8 @@ public final class KITInfoImpl extends KITInfo {
         CommonAnnouncementHandler commonAnnouncementHandler = new CommonAnnouncementHandler();
         try {
             onOutput("共有告知を取得します。");
-            HashMap<Integer, CommonAnnouncementEntry> log = (HashMap<Integer, CommonAnnouncementEntry>) FileUtils.readObjectFromFile(LOG_COMMON_ANNOUNCEMENT);
+            Map<Integer, CommonAnnouncementEntry> log = (Map<Integer, CommonAnnouncementEntry>) FileUtils.read(LOG_COMMON_ANNOUNCEMENT,
+                    new TypeToken<Map<Integer, CommonAnnouncementEntry>>() {}.getType());
             if (log == null) {
                 log = new HashMap<Integer, CommonAnnouncementEntry>();
                 onOutput("共有告知のログファイルを新規作成しました。");
@@ -113,7 +116,7 @@ public final class KITInfoImpl extends KITInfo {
                     log.put(entry.getId(), entry);
                 }
 
-                FileUtils.writeObjectToFile(log, LOG_COMMON_ANNOUNCEMENT);
+                FileUtils.write(log, LOG_COMMON_ANNOUNCEMENT, new TypeToken<Map<Integer, CommonAnnouncementEntry>>() {}.getType());
             }
 
         } catch (AuthenticateFailedException e) {
@@ -142,7 +145,7 @@ public final class KITInfoImpl extends KITInfo {
         KITNewsHandler kitNewsHandler = new KITNewsHandler();
         try {
             onOutput("KITニュースを取得します。");
-            HashMap<String, KITNewsEntity> log = (HashMap<String, KITNewsEntity>) FileUtils.readObjectFromFile(LOG_KIT_NEWS);
+            Map<String, KITNewsEntity> log = (Map<String, KITNewsEntity>) FileUtils.read(LOG_KIT_NEWS, new TypeToken<Map<String, KITNewsEntity>>() {}.getType());
             if (log == null) {
                 log = new HashMap<String, KITNewsEntity>();
                 onOutput("KITニュースのログファイルを新規作成しました。");
@@ -173,7 +176,7 @@ public final class KITInfoImpl extends KITInfo {
                     log.put(entity.getUrl(), entity);
                 }
 
-                FileUtils.writeObjectToFile(log, LOG_KIT_NEWS);
+                FileUtils.write(log, LOG_KIT_NEWS, new TypeToken<Map<String, KITNewsEntity>>() {}.getType());
             }
 
         } catch (IOException | ParserConfigurationException | SAXException e) {
