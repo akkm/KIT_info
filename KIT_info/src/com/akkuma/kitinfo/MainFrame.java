@@ -31,7 +31,7 @@ import javax.swing.JSpinner;
 import javax.swing.SpinnerNumberModel;
 import javax.swing.UIManager;
 
-@SuppressWarnings({ "serial" })
+@SuppressWarnings("serial")
 public class MainFrame extends JFrame implements DebugOutputListener {
 
     private static final String SETTINGS_LOG_FILE = "settings.log";
@@ -57,7 +57,7 @@ public class MainFrame extends JFrame implements DebugOutputListener {
         @SuppressWarnings("deprecation")
         @Override
         public void run() {
-            mKitInfo = new KITInfo();
+            mKitInfo = KITInfo.getInstance();
             mKitInfo.setDebugOutputListener(MainFrame.this);
             if (parse) {
                 mKitInfo.start(mPortalIdTextField.getText(), mPortalPasswordField.getText());
