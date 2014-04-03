@@ -241,7 +241,7 @@ public class CommonAnnouncementHandler {
                         entry.setBody(StringEscapeUtils.unescapeHtml4(buffer.replaceAll("<.*>", "")).trim());
                     } else {
                         String str = append + "\n" + buffer.replaceAll("<.*>", "").trim();
-                        entry.setBody(str);
+                        entry.setBody(StringEscapeUtils.unescapeHtml4(str));
                     }
                     continue;
                 }
