@@ -18,6 +18,11 @@ public class TweetRequest implements Serializable {
         list = new ArrayList<String>();
     }
     
+    public TweetRequest(String text) {
+        list = new ArrayList<String>();
+        add(text);
+    }
+    
     public TweetRequest add(String text) {
 
         Pattern urlPattern = Pattern.compile("(http://|https://){1}[\\w\\.\\-/:\\#\\?\\=\\&\\;\\%\\~\\+]+", Pattern.MULTILINE);

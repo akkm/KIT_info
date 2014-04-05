@@ -17,6 +17,9 @@ import com.akkuma.kitinfo.core.announce.CommonAnnouncementHandler;
 import com.akkuma.kitinfo.core.announce.CommonAnnouncementHandler.AuthenticateFailedException;
 import com.akkuma.kitinfo.core.announce.CommonAnnouncementHandler.CommonAnnouncementException;
 import com.akkuma.kitinfo.core.announce.CommonAnnouncementHandler.NotAuthenticatedException;
+import com.akkuma.kitinfo.core.cancel.CanceledLectureEntry;
+import com.akkuma.kitinfo.core.cancel.CanceledLectureHandler;
+import com.akkuma.kitinfo.core.cancel.CanceledLectureHandler.CanceledLectureException;
 import com.akkuma.kitinfo.core.news.KITNewsEntity;
 import com.akkuma.kitinfo.core.news.KITNewsHandler;
 import com.akkuma.kitinfo.core.twitter.TweetRequest;
@@ -51,11 +54,13 @@ public final class KITInfoImpl extends KITInfo {
         SimpleDateFormat outputDateFormat = new SimpleDateFormat("yyyy/MM/dd H:mm:ss:SSS");
         onOutput("KIT_info started," + outputDateFormat.format(calendar.getTime()));
 
+        cancelledLectureSession();
         commonAnnouncementSession(portalId, portalPassword);
         kitNewsSession();
 
     }
 
+    private static final String LOG_CANCELED_LECTURE = "canceled_lecture.json";
     private static final String LOG_KIT_NEWS = "kit_news.json";
     private static final String LOG_COMMON_ANNOUNCEMENT = "common_announcement.json";
 
@@ -139,6 +144,55 @@ public final class KITInfoImpl extends KITInfo {
     }
 
     @SuppressWarnings("unchecked")
+    public void cancelledLectureSession() {
+
+        CanceledLectureHandler handler = new CanceledLectureHandler();
+
+        try {
+            onOutput("休講情報を取得します。");
+            Map<Integer, CanceledLectureEntry> log = (Map<Integer, CanceledLectureEntry>) FileUtils.read(LOG_CANCELED_LECTURE, new TypeToken<Map<Integer, CanceledLectureEntry>>() {}.getType());
+            if (log == null) {
+                log = new HashMap<Integer, CanceledLectureEntry>();
+                onOutput("休講情報のログファイルを新規作成しました。");
+            }
+
+            ArrayList<CanceledLectureEntry> list = handler.get();
+
+            onOutput("休講情報エントリーは" + list.size() + "個です。");
+
+            if (list.size() == 0) {
+                return;
+            }
+
+            boolean updated = true;
+            for (CanceledLectureEntry entry : list) {
+                CanceledLectureEntry logEntry = log.get(entry.getHashCode());
+                if (logEntry == null) {
+                    updated = true;
+                    TweetRequest req = new TweetRequest();
+                    req.add("【更新・休講】" + entry.toOutputString());
+                    addTweetQueue(req);
+                }
+
+            }
+
+            if (updated) {
+                log.clear();
+
+                for (CanceledLectureEntry entry : list) {
+                    log.put(entry.getHashCode(), entry);
+                }
+
+                FileUtils.write(log, LOG_CANCELED_LECTURE, new TypeToken<Map<Integer, CanceledLectureEntry>>() {}.getType());
+            }
+        } catch (CanceledLectureException e) {
+            e.printStackTrace();
+            onOutput("休講情報の取得でエラー");
+        }
+
+    }
+
+    @SuppressWarnings("unchecked")
     public void kitNewsSession() {
 
         // KITニュース
@@ -201,7 +255,24 @@ public final class KITInfoImpl extends KITInfo {
     }
 
     public void dayTweet() {
+        try {
+            ArrayList<CanceledLectureEntry> canceledLectureEntries = new CanceledLectureHandler().get();
 
+            boolean headerTweeted = false;
+            for (CanceledLectureEntry entry : canceledLectureEntries) {
+                if (entry.isTodayEntry() && !entry.isCanceled()) {
+                    if (!headerTweeted) {
+                        headerTweeted = true;
+                        // addTweetQueue(new TweetRequest(text));
+                    }
+
+                    addTweetQueue(new TweetRequest("【今日の休講】" + entry.toOutputString(false)));
+                }
+            }
+        } catch (CanceledLectureException e) {
+            e.printStackTrace();
+            onOutput("休講情報の取得でエラー");
+        }
     }
 
     protected void onOutput(String text) {
