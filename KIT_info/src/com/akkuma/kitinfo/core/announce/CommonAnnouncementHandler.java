@@ -138,7 +138,7 @@ public class CommonAnnouncementHandler {
                 }
 
                 // データのパース 2行目
-                Pattern parsePattern2 = Pattern.compile("(.*)(</a></li>|</s></a></li>)");
+                Pattern parsePattern2 = Pattern.compile("(.*)(</a></li>|</a></s></li>)");
                 Matcher parseMatcher2 = parsePattern2.matcher(buffer);
                 if (parseMatcher2.find() && entryBuffer != null) {
                     entryBuffer.setTitle(StringEscapeUtils.unescapeHtml4(parseMatcher2.replaceFirst("$1")).trim());

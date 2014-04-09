@@ -30,6 +30,7 @@ import javax.swing.SwingConstants;
 import javax.swing.JSpinner;
 import javax.swing.SpinnerNumberModel;
 import javax.swing.UIManager;
+import javax.swing.UnsupportedLookAndFeelException;
 
 @SuppressWarnings("serial")
 public class MainFrame extends JFrame implements DebugOutputListener {
@@ -92,7 +93,7 @@ public class MainFrame extends JFrame implements DebugOutputListener {
             mStateLabel.setText(mStateDateFormat.format(nextExecute.getTime()));
             mForceStartButton.setEnabled(false);
             mTextArea.setText("");
-            boolean parse = minute == 0;
+            boolean parse = minute == 0 || minute == 30;
             boolean weather = hour == (int) mWeatherTweetHourSpinner.getValue() && minute == (int) mWeatherTweetMinuteSpinner.getValue();
             boolean dayTweet = hour == (int) mDayTweetTimeHourSpinner.getValue() && minute == (int) mDayTweetTimeMinuteSpinner.getValue();
             mKitInfoThread = new KITInfoThread(parse, weather, dayTweet);
@@ -176,7 +177,11 @@ public class MainFrame extends JFrame implements DebugOutputListener {
     public static void main(String[] args) {
         EventQueue.invokeLater(new Runnable() {
             public void run() {
-                UIManager.put("swing.boldMetal", Boolean.FALSE);
+                try {
+                    UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+                } catch (ClassNotFoundException | InstantiationException | IllegalAccessException | UnsupportedLookAndFeelException e1) {
+                    e1.printStackTrace();
+                }
                 try {
                     MainFrame frame = new MainFrame();
                     frame.setVisible(true);

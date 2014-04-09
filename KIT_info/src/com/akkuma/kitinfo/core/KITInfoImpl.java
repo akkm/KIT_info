@@ -22,6 +22,9 @@ import com.akkuma.kitinfo.core.cancel.CanceledLectureHandler;
 import com.akkuma.kitinfo.core.cancel.CanceledLectureHandler.CanceledLectureException;
 import com.akkuma.kitinfo.core.news.KITNewsEntity;
 import com.akkuma.kitinfo.core.news.KITNewsHandler;
+import com.akkuma.kitinfo.core.supply.SupplementaryLectureEntry;
+import com.akkuma.kitinfo.core.supply.SupplementaryLectureHandler;
+import com.akkuma.kitinfo.core.supply.SupplementaryLectureHandler.SupplementaryLectureException;
 import com.akkuma.kitinfo.core.twitter.TweetRequest;
 import com.akkuma.kitinfo.core.twitter.TwitterManager;
 import com.akkuma.kitinfo.core.weather.KanazawaWeatherHandler;
@@ -55,12 +58,14 @@ public final class KITInfoImpl extends KITInfo {
         onOutput("KIT_info started," + outputDateFormat.format(calendar.getTime()));
 
         cancelledLectureSession();
+        supplementaryLectureSession();
         commonAnnouncementSession(portalId, portalPassword);
         kitNewsSession();
 
     }
 
     private static final String LOG_CANCELED_LECTURE = "canceled_lecture.json";
+    private static final String LOG_SUPPLEMENTARY_LECTURE = "supplementary_lecture.json";
     private static final String LOG_KIT_NEWS = "kit_news.json";
     private static final String LOG_COMMON_ANNOUNCEMENT = "common_announcement.json";
 
@@ -115,7 +120,7 @@ public final class KITInfoImpl extends KITInfo {
                 addTweetQueue(req);
             }
 
-            if (newDetailEntries.size() != 0) {
+            if (newDetailEntries.size() != 0 || cancelledEntries.size() != 0) {
                 log.clear();
                 for (CommonAnnouncementEntry entry : entries) {
                     log.put(entry.getId(), entry);
@@ -193,6 +198,55 @@ public final class KITInfoImpl extends KITInfo {
     }
 
     @SuppressWarnings("unchecked")
+    public void supplementaryLectureSession() {
+
+        SupplementaryLectureHandler handler = new SupplementaryLectureHandler();
+
+        try {
+            onOutput("補講情報を取得します。");
+            Map<Integer, SupplementaryLectureEntry> log = (Map<Integer, SupplementaryLectureEntry>) FileUtils.read(LOG_SUPPLEMENTARY_LECTURE, new TypeToken<Map<Integer, SupplementaryLectureEntry>>() {}.getType());
+            if (log == null) {
+                log = new HashMap<Integer, SupplementaryLectureEntry>();
+                onOutput("補講情報のログファイルを新規作成しました。");
+            }
+
+            ArrayList<SupplementaryLectureEntry> list = handler.get();
+
+            onOutput("補講情報エントリーは" + list.size() + "個です。");
+
+            if (list.size() == 0) {
+                return;
+            }
+
+            boolean updated = true;
+            for (SupplementaryLectureEntry entry : list) {
+                SupplementaryLectureEntry logEntry = log.get(entry.getHashCode());
+                if (logEntry == null) {
+                    updated = true;
+                    TweetRequest req = new TweetRequest();
+                    req.add("【更新・補講】" + entry.toOutputString());
+                    addTweetQueue(req);
+                }
+
+            }
+
+            if (updated) {
+                log.clear();
+
+                for (SupplementaryLectureEntry entry : list) {
+                    log.put(entry.getHashCode(), entry);
+                }
+
+                FileUtils.write(log, LOG_SUPPLEMENTARY_LECTURE, new TypeToken<Map<Integer, SupplementaryLectureEntry>>() {}.getType());
+            }
+        } catch (SupplementaryLectureException e) {
+            e.printStackTrace();
+            onOutput("補講情報の取得でエラー");
+        }
+
+    }
+    
+    @SuppressWarnings("unchecked")
     public void kitNewsSession() {
 
         // KITニュース
@@ -258,20 +312,27 @@ public final class KITInfoImpl extends KITInfo {
         try {
             ArrayList<CanceledLectureEntry> canceledLectureEntries = new CanceledLectureHandler().get();
 
-            boolean headerTweeted = false;
             for (CanceledLectureEntry entry : canceledLectureEntries) {
                 if (entry.isTodayEntry() && !entry.isCanceled()) {
-                    if (!headerTweeted) {
-                        headerTweeted = true;
-                        // addTweetQueue(new TweetRequest(text));
-                    }
-
                     addTweetQueue(new TweetRequest("【今日の休講】" + entry.toOutputString(false)));
                 }
             }
         } catch (CanceledLectureException e) {
             e.printStackTrace();
             onOutput("休講情報の取得でエラー");
+        }
+        
+        try {
+            ArrayList<SupplementaryLectureEntry> supplementaryLectureEntries = new SupplementaryLectureHandler().get();
+
+            for (SupplementaryLectureEntry entry : supplementaryLectureEntries) {
+                if (entry.isTodayEntry() && !entry.isCanceled()) {
+                    addTweetQueue(new TweetRequest("【今日の補講】" + entry.toOutputString(false)));
+                }
+            }
+        } catch (SupplementaryLectureException e) {
+            e.printStackTrace();
+            onOutput("補講情報の取得でエラー");
         }
     }
 
