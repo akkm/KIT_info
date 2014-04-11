@@ -71,10 +71,10 @@ class TwitterManagerImpl extends TwitterManager {
                         out.onOutput("ツイート失敗");
                         out.onOutput(e.toString());
                     }
-                    if (e.getErrorCode() != 187) {
+                    if (e.getErrorCode() != 187 && e.getErrorCode() != 186) {
                         nextQueueLog.add(req);
-                        break;
                     }
+                    break;
                 }
             }
         }
