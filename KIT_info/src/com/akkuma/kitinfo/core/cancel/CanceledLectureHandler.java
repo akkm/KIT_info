@@ -57,12 +57,12 @@ public class CanceledLectureHandler {
                     continue;
                 }
                 
-                Pattern p = Pattern.compile("(.*<td .*class=\"data\".*>)(.*)(</td>)");
+                Pattern p = Pattern.compile("(.*<td .*class=\"data\")(>| nowrap>)(.*)(</td>)");
                 Matcher m = p.matcher(buffer);
                 if (m.find()) {
-                    String str = StringEscapeUtils.unescapeHtml4(m.replaceAll("$2").trim());
+                    String str = StringEscapeUtils.unescapeHtml4(m.replaceAll("$3").trim());
                     str = str.replace("<BR>", " ");
-                    Pattern strikePattern = Pattern.compile("(<strike>)(.*)(</strike>)");
+                    Pattern strikePattern = Pattern.compile("(<strike><i>)(.*)(</i></strike>)");
                     Matcher strikeMatcher = strikePattern.matcher(str);
                     if (strikeMatcher.find()) {
                         str = strikeMatcher.replaceAll("$2").trim();
@@ -73,10 +73,10 @@ public class CanceledLectureHandler {
                     if (entry == null) {
                         entry = new CanceledLectureEntry();
                         // 日付
-                        Pattern dayPattern = Pattern.compile("([0-9]+)(/)([0-9]+)(\\(.*\\))");
+                        Pattern dayPattern = Pattern.compile("(.*)([0-9]+)(/)([0-9]+)(\\(.*\\))(.*)");
                         Matcher dayMatcher = dayPattern.matcher(str);
-                        int month = Integer.parseInt(dayMatcher.replaceAll("$1")) - 1;
-                        int dayOfMonth = Integer.parseInt(dayMatcher.replaceAll("$3"));
+                        int month = Integer.parseInt(dayMatcher.replaceAll("$2")) - 1;
+                        int dayOfMonth = Integer.parseInt(dayMatcher.replaceAll("$4"));
                         Calendar calendar = Calendar.getInstance();
                         int year = calendar.get(Calendar.YEAR);
                         calendar.clear();
@@ -106,7 +106,7 @@ public class CanceledLectureHandler {
                     }
                     if (entry.getNote() == null) {
                         // 備考
-                        entry.setNote(str);
+                        entry.setNote(str.replaceAll("<.+?>", ""));
                         list.add(entry);
                         entry = null;
                         continue;
