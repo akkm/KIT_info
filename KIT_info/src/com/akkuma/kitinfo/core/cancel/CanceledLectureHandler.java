@@ -73,10 +73,10 @@ public class CanceledLectureHandler {
                     if (entry == null) {
                         entry = new CanceledLectureEntry();
                         // 日付
-                        Pattern dayPattern = Pattern.compile("(.*)([0-9]+)(/)([0-9]+)(\\(.*\\))(.*)");
+                        Pattern dayPattern = Pattern.compile("([0-9]+)(/)([0-9]+)(\\(.*\\))(.*)");
                         Matcher dayMatcher = dayPattern.matcher(str);
-                        int month = Integer.parseInt(dayMatcher.replaceAll("$2")) - 1;
-                        int dayOfMonth = Integer.parseInt(dayMatcher.replaceAll("$4"));
+                        int month = Integer.parseInt(dayMatcher.replaceAll("$1")) - 1;
+                        int dayOfMonth = Integer.parseInt(dayMatcher.replaceAll("$3"));
                         Calendar calendar = Calendar.getInstance();
                         int year = calendar.get(Calendar.YEAR);
                         calendar.clear();
